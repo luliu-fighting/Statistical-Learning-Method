@@ -8,7 +8,7 @@
 在此程序中，为了画图方便，只用了前两个特征sepal length 和 sepal width, 并且只用了前100个样本，也就是只
 用了两类标签，实现二分类。
 
-此程序对权值的更新采用了梯度下降法。
+此程序对权值的更新采用了牛顿法
 '''
 
 import numpy as np
@@ -42,26 +42,24 @@ class LogisticRegression:
     def sigmoid(self,x):
         return 1 / (1 + np.exp(-x))
 
-    #训练，梯度下降
+    #训练,牛顿法
     def train(self, train_data, train_label):
         print("start to train")
         #因为输入的train_label是个1维数组，无法进行转置，所以将其扩充为2维
         train_label = np.array([train_label]).T
         for iter in range(self.max_iter):
-            #用for循环一行一行的实现梯度下降
+            #一行一行的求解
             for i in range(len(train_data)):
+                # 因为取出的x是个1维数组，无法进行转置，所以将其扩充为2维
                 x = np.array([train_data[i]])
                 y = train_label[i]
                 wx = np.dot(x, self.w)
-                self.w += self.learning_rate*(x*y - (np.exp(wx) * x) / ( 1 + np.exp(wx))).T
-
-            #直接用矩阵实现
-            #计算 w*x
-            # wx = np.dot(train_data, self.w)
-            # #计算梯度
-            # gradient = np.dot(train_data.T, (self.sigmoid(wx) - train_label))
-            # #更新权值
-            # self.w -= self.learning_rate*gradient
+                #计算一阶导数
+                gradient = np.dot(x.T, (y - self.sigmoid(wx)))
+                #计算Hessian矩阵
+                Hessian = -np.dot(x.T, self.sigmoid(wx)).dot((1 - self.sigmoid(wx))).dot(x)
+                #权值更新
+                self.w -= self.learning_rate * np.linalg.pinv(Hessian).dot(gradient)
         print("training completed")
         print("w is {}".format(self.w))
 
@@ -99,11 +97,10 @@ if __name__ ==  "__main__":
     clf.test(test_data, test_label)
 
     #画图
-    plt.scatter(X[:50, 0], X[:50, 1], label='0')
-    plt.scatter(X[50:, 0], X[50:, 1], label='1')
+    plt.scatter(X[:50, 0], X[:50, 1], label='label0')
+    plt.scatter(X[50:, 0], X[50:, 1], label='label1')
     plt.legend()
     x_points = x_ponits = np.arange(4, 8)
     y_points = -(clf.w[0]*x_ponits + clf.w[2])/clf.w[1]
     plt.plot(x_ponits, y_points)
     plt.show()
-
